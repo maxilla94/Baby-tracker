@@ -209,7 +209,7 @@ function renderTimeline(){
   let label={
    feed_start:"🍼 start karmienia",
    feed_end:"🍼 koniec karmienia",
-   sleep_start:"😴 zasnął",
+   sleep_start:"😴 zasnęło",
    sleep_end:"😴 pobudka",
    diaper_pee:"💧 siku",
    diaper_poop:"💩 kupa",
@@ -374,30 +374,6 @@ function editEvent(id){
  document.getElementById("editSheet").classList.remove("hidden");
 }
 
- let action=prompt(
-`Co zrobić?
-
-1 - zmień godzinę
-2 - usuń zdarzenie`,
-"");
-
- if(action==="2"){
-  events=events.filter(x=>x.id!==id);
-  save();
-  return;
- }
-
- if(action==="1"){
-  let date=new Date(e.time);
-  let newTime=prompt("Podaj godzinę HH:MM",date.toTimeString().slice(0,5));
-  if(!newTime)return;
-
-  let [h,m]=newTime.split(":");
-  date.setHours(parseInt(h),parseInt(m));
-  e.time=date.getTime();
-  save();
- }
-}
 render();
 
 function closeSheet(){
