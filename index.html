@@ -49,18 +49,37 @@ table td:first-child{text-align:left}
 }
 
 .sheetBox{
- background:#1c1c1c;
+ background:#111;
  width:100%;
- padding:10px;
- border-radius:16px 16px 0 0;
+ padding:14px;
+ border-radius:18px 18px 0 0;
+ box-shadow:0 -10px 30px rgba(0,0,0,.6);
 }
 
 .sheet button{
  width:100%;
  margin:6px 0;
- font-size:18px;
- padding:16px;
+ font-size:17px;
+ padding:15px;
  border-radius:12px;
+ background:#1f1f1f;
+ color:#ddd;
+ border:1px solid #2a2a2a;
+}
+
+.sheet button:active{
+ background:#2a2a2a;
+}
+
+.sheet button.delete{
+ background:#2a1515;
+ color:#ffb3b3;
+ border:1px solid #402020;
+}
+
+.sheet button.cancel{
+ background:#181818;
+ color:#aaa;
 }
 
 .hidden{display:none}
@@ -407,8 +426,8 @@ function changeTime(){
 <div id="editSheet" class="sheet hidden">
   <div class="sheetBox">
     <button onclick="changeTime()">🕒 Zmień godzinę</button>
-    <button onclick="deleteEvent()">🗑 Usuń zdarzenie</button>
-    <button onclick="closeSheet()">Anuluj</button>
+    <button class="delete" onclick="deleteEvent()">🗑 Usuń zdarzenie</button>
+    <button class="cancel" onclick="closeSheet()">Anuluj</button>
   </div>
 </div>
 
