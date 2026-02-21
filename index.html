@@ -366,37 +366,60 @@ function renderWeekSummary(){
 }
 
 function exportReport(){
- let start=getDayStart(6);
- let week=getEventsBetween(start,Date.now());
 
- let feeds=count("feed_end",week);
- let feedTime=sumDurations(week,"feed_start","feed_end");
- let sleep=sumDurations(week,"sleep_start","sleep_end");
- let naps=count("sleep_end",week);
- let nap=napStats(week);
- let pee=count("diaper_pee",week);
- let poop=count("diaper_poop",week);
- let mix=count("diaper_mix",week);
+ function pad(txt,len){
+  txt=String(txt);
+  return txt + " ".repeat(Math.max(1,len-txt.length));
+ }
 
- let txt=
-`Raport tygodniowy
+ let lines=[];
+ lines.push("RAPORT TYGODNIOWY");
+ lines.push("");
 
-Karmienia: ${feeds}
-Czas karmienia: ${format(feedTime)}
+ let header=
+  pad("Dzień",10)+
+  pad("Karmienia",12)+
+  pad("Czas karmienia",16)+
+  pad("Sen",8)+
+  pad("Siku",6)+
+  pad("Kupa",6)+
+  pad("Mieszane",8);
 
-Sen: ${format(sleep)} (${naps} drzemek)
-Drzemki >45 min: ${nap.long}
-Drzemki ≤45 min: ${nap.short}
+ lines.push(header);
+ lines.push("-".repeat(header.length));
 
-Pieluchy:
-siku: ${pee}
-kupa: ${poop}
-mieszane: ${mix}`;
+ for(let i=0;i<7;i++){
+  let start=getDayStart(i);
+  let end=getDayStart(i-1);
+  let day=getEventsBetween(start,end);
+
+  let feeds=count("feed_end",day);
+  let feedTime=format(sumDurations(day,"feed_start","feed_end"));
+  let sleep=format(sumDurations(day,"sleep_start","sleep_end"));
+  let pee=count("diaper_pee",day);
+  let poop=count("diaper_poop",day);
+  let mix=count("diaper_mix",day);
+
+  let label=i===0?"Dziś":i===1?"Wczoraj":i+" dni";
+
+  let row=
+   pad(label,10)+
+   pad(feeds,12)+
+   pad(feedTime,16)+
+   pad(sleep,8)+
+   pad(pee,6)+
+   pad(poop,6)+
+   pad(mix,8);
+
+  lines.push(row);
+ }
+
+ let txt=lines.join("\n");
 
  let blob=new Blob([txt],{type:"text/plain"});
  let a=document.createElement("a");
  a.href=URL.createObjectURL(blob);
- a.download="raport.txt";
+ a.download="raport_tygodniowy.txt";
  a.click();
 }
 
