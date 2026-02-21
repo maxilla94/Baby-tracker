@@ -38,6 +38,33 @@ button{
 .small{opacity:.7;font-size:14px}
 table td{padding:4px 2px;text-align:center}
 table td:first-child{text-align:left}
+
+.sheet{
+ position:fixed;
+ inset:0;
+ background:rgba(0,0,0,.6);
+ display:flex;
+ align-items:flex-end;
+ justify-content:center;
+}
+
+.sheetBox{
+ background:#1c1c1c;
+ width:100%;
+ padding:10px;
+ border-radius:16px 16px 0 0;
+}
+
+.sheet button{
+ width:100%;
+ margin:6px 0;
+ font-size:18px;
+ padding:16px;
+ border-radius:12px;
+}
+
+.hidden{display:none}
+
 </style>
 </head>
 
@@ -87,6 +114,7 @@ WERSJA TESTOWA – dane mogą zostać usunięte
 
 const KEY="baby_events_v1";
 let events=JSON.parse(localStorage.getItem(KEY)||"[]");
+let selectedEvent=null;
 
 function save(){
  localStorage.setItem(KEY,JSON.stringify(events));
@@ -342,8 +370,9 @@ mieszane: ${mix}`;
 }
 
 function editEvent(id){
- let e=events.find(x=>x.id===id);
- if(!e)return;
+ selectedEvent=events.find(x=>x.id===id);
+ document.getElementById("editSheet").classList.remove("hidden");
+}
 
  let action=prompt(
 `Co zrobić?
@@ -371,6 +400,40 @@ function editEvent(id){
 }
 render();
 
+function closeSheet(){
+ document.getElementById("editSheet").classList.add("hidden");
+}
+
+function deleteEvent(){
+ if(!selectedEvent)return;
+ events=events.filter(x=>x.id!==selectedEvent.id);
+ closeSheet();
+ save();
+}
+
+function changeTime(){
+ if(!selectedEvent)return;
+
+ let date=new Date(selectedEvent.time);
+ let newTime=prompt("Podaj godzinę HH:MM",date.toTimeString().slice(0,5));
+ if(!newTime)return;
+
+ let [h,m]=newTime.split(":");
+ date.setHours(parseInt(h),parseInt(m));
+ selectedEvent.time=date.getTime();
+
+ closeSheet();
+ save();
+}
+
 </script>
+
+<div id="editSheet" class="sheet hidden">
+  <div class="sheetBox">
+    <button onclick="changeTime()">🕒 Zmień godzinę</button>
+    <button onclick="deleteEvent()">🗑 Usuń zdarzenie</button>
+    <button onclick="closeSheet()">Anuluj</button>
+  </div>
+</div>
 
 </body>
