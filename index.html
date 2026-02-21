@@ -19,7 +19,12 @@ button{
     font-size:18px;
     border-radius:14px;
     border:none;
+    color:#fff;
+    font-weight:600;
 }
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.full{width:100%}
 .feed{background:#2e7dff;}
 .sleep{background:#6a5acd;}
 .diaper{background:#2aa876;}
@@ -31,6 +36,8 @@ button{
     margin:10px 0;
 }
 .small{opacity:.7;font-size:14px}
+table td{padding:4px 2px;text-align:center}
+table td:first-child{text-align:left}
 </style>
 </head>
 
@@ -38,6 +45,9 @@ button{
 
 <div style="text-align:center;font-size:12px;opacity:.6;margin-bottom:10px">
 WERSJA TESTOWA – dane mogą zostać usunięte
+</div>
+
+<div id="dateBar" style="font-size:14px;opacity:.8;margin-bottom:6px">
 </div>
 
 <h2>TERAZ</h2>
@@ -48,14 +58,19 @@ WERSJA TESTOWA – dane mogą zostać usunięte
 </div>
 
 <h2>AKCJE</h2>
+
+<div class="grid2">
 <button class="feed" onclick="toggleFeed()">🍼 Karmienie</button>
 <button class="sleep" onclick="toggleSleep()">😴 Sen</button>
+</div>
 
+<div class="grid3">
 <button class="diaper" onclick="addEvent('diaper_pee')">💧 Siku</button>
 <button class="diaper" onclick="addEvent('diaper_poop')">💩 Kupa</button>
 <button class="diaper" onclick="addEvent('diaper_mix')">💥 Mieszane</button>
+</div>
 
-<button class="note" onclick="addNote()">📝 Notatka</button>
+<button class="note full" onclick="addNote()">📝 Notatka</button>
 
 <h2>DZIŚ</h2>
 <div id="timeline"></div>
@@ -128,9 +143,17 @@ function last(type){
  return [...events].reverse().find(e=>e.type===type);
 }
 
+function renderDate(){
+ let d=new Date();
+ let days=["niedziela","poniedziałek","wtorek","środa","czwartek","piątek","sobota"];
+ let txt=days[d.getDay()]+" • "+d.toLocaleDateString();
+ document.getElementById("dateBar").innerText=txt;
+}
+
 function renderNow(){
  let lf=last("feed_end");
  let ld=last("diaper_pee")||last("diaper_poop")||last("diaper_mix");
+ let ls=last("sleep_end");
 
  document.getElementById("sinceFeed").innerText=
   lf? "od karmienia: "+format(now()-lf.time):"od karmienia: -";
@@ -138,9 +161,14 @@ function renderNow(){
  document.getElementById("sinceDiaper").innerText=
   ld? "od pieluchy: "+format(now()-ld.time):"od pieluchy: -";
 
- let s=events.findLast(e=>e.type==="sleep_start" && !events.some(x=>x.type==="sleep_end" && x.time>e.time));
- document.getElementById("sinceSleep").innerText=
-  s? "śpi: "+format(now()-s.time):"sen: -";
+ let activeSleep=events.findLast(e=>e.type==="sleep_start" && !events.some(x=>x.type==="sleep_end" && x.time>e.time));
+
+ if(activeSleep){
+  document.getElementById("sinceSleep").innerText="śpi: "+format(now()-activeSleep.time);
+ }else{
+  document.getElementById("sinceSleep").innerText=
+   ls? "od snu: "+format(now()-ls.time):"od snu: -";
+ }
 }
 
 function renderTimeline(){
@@ -167,6 +195,7 @@ function renderTimeline(){
 }
 
 function render(){
+ renderDate();
  renderNow();
  renderTimeline();
  renderTodaySummary();
@@ -235,22 +264,42 @@ function renderTodaySummary(){
 }
 
 function renderWeekSummary(){
- let html="";
+ let html=`<table style="width:100%;font-size:14px;border-collapse:collapse">
+ <tr style="opacity:.7">
+ <td>Dzień</td>
+ <td>🍼</td>
+ <td>😴</td>
+ <td>💧</td>
+ <td>💩</td>
+ <td>💥</td>
+ </tr>`;
+
  for(let i=0;i<7;i++){
   let start=getDayStart(i);
   let end=getDayStart(i-1);
   let day=getEventsBetween(start,end);
-  let nap=napStats(day);
+
   let feeds=count("feed_end",day);
-  let feedTime=sumDurations(day,"feed_start","feed_end");
   let sleep=sumDurations(day,"sleep_start","sleep_end");
-  let naps=count("sleep_end",day);
-  let diapers=count("diaper_pee",day)+count("diaper_poop",day)+count("diaper_mix",day);
+  let nap=napStats(day);
 
-  let label=i===0?"dziś":i+" dni temu";
+  let pee=count("diaper_pee",day);
+  let poop=count("diaper_poop",day);
+  let mix=count("diaper_mix",day);
 
-  html+=`${label}: 🍼${feeds} (${format(feedTime)}) | 😴${format(sleep)} (${nap.long}/${nap.short}) | 💩${diapers}<br>`;
+  let label=i===0?"dziś":i===1?"wczoraj":i+"d";
+
+  html+=`<tr>
+   <td>${label}</td>
+   <td>${feeds}</td>
+   <td>${format(sleep)}</td>
+   <td>${pee}</td>
+   <td>${poop}</td>
+   <td>${mix}</td>
+  </tr>`;
  }
+
+ html+="</table>";
  document.getElementById("weekSummary").innerHTML=html;
 }
 
