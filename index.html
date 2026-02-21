@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baby Tracker</title>
+
+<style>
+body{
+    font-family: system-ui;
+    margin:20px;
+    background:#111;
+    color:#fff;
+}
+button{
+    width:100%;
+    padding:18px;
+    margin:8px 0;
+    font-size:18px;
+    border-radius:14px;
+    border:none;
+}
+.feed{background:#2e7dff;}
+.sleep{background:#6a5acd;}
+.diaper{background:#2aa876;}
+.note{background:#444;}
+.card{
+    background:#1c1c1c;
+    padding:15px;
+    border-radius:14px;
+    margin:10px 0;
+}
+.small{opacity:.7;font-size:14px}
+</style>
+</head>
+
+<body>
+
+<h2>TERAZ</h2>
+<div class="card">
+<div id="sinceFeed">od karmienia: -</div>
+<div id="sinceSleep">sen: -</div>
+<div id="sinceDiaper">od pieluchy: -</div>
+</div>
+
+<h2>AKCJE</h2>
+<button class="feed" onclick="toggleFeed()">🍼 Karmienie</button>
+<button class="sleep" onclick="toggleSleep()">😴 Sen</button>
+
+<button class="diaper" onclick="addEvent('diaper_pee')">💧 Siku</button>
+<button class="diaper" onclick="addEvent('diaper_poop')">💩 Kupa</button>
+<button class="diaper" onclick="addEvent('diaper_mix')">💥 Mieszane</button>
+
+<button class="note" onclick="addNote()">📝 Notatka</button>
+
+<h2>DZIŚ</h2>
+<div id="timeline"></div>
+
+<script>
+
+const KEY="baby_events_v1";
+let events=JSON.parse(localStorage.getItem(KEY)||"[]");
+
+function save(){
+ localStorage.setItem(KEY,JSON.stringify(events));
+ render();
+}
+
+function now(){return Date.now();}
+
+function addEvent(type){
+ closeActive(type);
+ events.push({id:now(),type,time:now()});
+ save();
+}
+
+function toggleFeed(){
+ let active=events.findLast(e=>e.type==="feed_start" && !events.some(x=>x.type==="feed_end" && x.time>e.time));
+ if(active){ addEvent("feed_end"); }
+ else{ addEvent("feed_start"); }
+}
+
+function toggleSleep(){
+ let active=events.findLast(e=>e.type==="sleep_start" && !events.some(x=>x.type==="sleep_end" && x.time>e.time));
+ if(active){ addEvent("sleep_end"); }
+ else{ addEvent("sleep_start"); }
+}
+
+function closeActive(newType){
+ let last=events.at(-1);
+ if(!last)return;
+
+ if(last.type==="feed_start" && newType!=="feed_end"){
+  if(confirm("Zakończyć karmienie?")) addEvent("feed_end");
+ }
+ if(last.type==="sleep_start" && newType!=="sleep_end"){
+  if(confirm("Zakończyć sen?")) addEvent("sleep_end");
+ }
+}
+
+function addNote(){
+ let txt=prompt("Notatka:");
+ if(!txt)return;
+ events.push({id:now(),type:"note",time:now(),note:txt});
+ save();
+}
+
+function format(ms){
+ let m=Math.floor(ms/60000);
+ let h=Math.floor(m/60);
+ m%=60;
+ return (h? h+"h ":"")+m+"m";
+}
+
+function last(type){
+ return [...events].reverse().find(e=>e.type===type);
+}
+
+function renderNow(){
+ let lf=last("feed_end");
+ let ld=last("diaper_pee")||last("diaper_poop")||last("diaper_mix");
+
+ document.getElementById("sinceFeed").innerText=
+  lf? "od karmienia: "+format(now()-lf.time):"od karmienia: -";
+
+ document.getElementById("sinceDiaper").innerText=
+  ld? "od pieluchy: "+format(now()-ld.time):"od pieluchy: -";
+
+ let s=events.findLast(e=>e.type==="sleep_start" && !events.some(x=>x.type==="sleep_end" && x.time>e.time));
+ document.getElementById("sinceSleep").innerText=
+  s? "śpi: "+format(now()-s.time):"sen: -";
+}
+
+function renderTimeline(){
+ let start=new Date(); start.setHours(0,0,0,0);
+ let today=events.filter(e=>e.time>start.getTime()).reverse();
+
+ let html="";
+ today.forEach(e=>{
+  let t=new Date(e.time).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  let label={
+   feed_start:"🍼 start karmienia",
+   feed_end:"🍼 koniec karmienia",
+   sleep_start:"😴 zasnął",
+   sleep_end:"😴 pobudka",
+   diaper_pee:"💧 siku",
+   diaper_poop:"💩 kupa",
+   diaper_mix:"💥 mieszane",
+   note:"📝 "+e.note
+  }[e.type];
+  html+=`<div class="card"><div>${label}</div><div class="small">${t}</div></div>`;
+ });
+
+ document.getElementById("timeline").innerHTML=html||"Brak wpisów";
+}
+
+function render(){
+ renderNow();
+ renderTimeline();
+}
+
+setInterval(renderNow,1000);
+render();
+
+</script>
+
+</body>
