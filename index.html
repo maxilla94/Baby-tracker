@@ -188,7 +188,10 @@ function renderTimeline(){
    diaper_mix:"💥 mieszane",
    note:"📝 "+e.note
   }[e.type];
-  html+=`<div class="card"><div>${label}</div><div class="small">${t}</div></div>`;
+  html+=`<div class="card" onclick="editEvent(${e.id})">
+<div>${label}</div>
+<div class="small">${t}</div>
+</div>`;
  });
 
  document.getElementById("timeline").innerHTML=html||"Brak wpisów";
@@ -338,6 +341,34 @@ mieszane: ${mix}`;
  a.click();
 }
 
+function editEvent(id){
+ let e=events.find(x=>x.id===id);
+ if(!e)return;
+
+ let action=prompt(
+`Co zrobić?
+
+1 - zmień godzinę
+2 - usuń zdarzenie`,
+"");
+
+ if(action==="2"){
+  events=events.filter(x=>x.id!==id);
+  save();
+  return;
+ }
+
+ if(action==="1"){
+  let date=new Date(e.time);
+  let newTime=prompt("Podaj godzinę HH:MM",date.toTimeString().slice(0,5));
+  if(!newTime)return;
+
+  let [h,m]=newTime.split(":");
+  date.setHours(parseInt(h),parseInt(m));
+  e.time=date.getTime();
+  save();
+ }
+}
 render();
 
 </script>
