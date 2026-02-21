@@ -56,6 +56,14 @@ button{
 <h2>DZIŚ</h2>
 <div id="timeline"></div>
 
+<h2>PODSUMOWANIE DNIA</h2>
+<div class="card" id="todaySummary">liczenie...</div>
+
+<h2>OSTATNIE 7 DNI</h2>
+<div class="card" id="weekSummary">liczenie...</div>
+
+<button class="note" onclick="exportReport()">📄 Eksportuj raport tygodniowy</button>
+
 <script>
 
 const KEY="baby_events_v1";
@@ -157,9 +165,126 @@ function renderTimeline(){
 function render(){
  renderNow();
  renderTimeline();
+ renderTodaySummary();
+ renderWeekSummary();
 }
 
 setInterval(renderNow,1000);
+function getDayStart(offset=0){
+ let d=new Date();
+ d.setHours(0,0,0,0);
+ d.setDate(d.getDate()-offset);
+ return d.getTime();
+}
+
+function getEventsBetween(start,end){
+ return events.filter(e=>e.time>=start && e.time<end);
+}
+
+function sumDurations(list,startType,endType){
+ let total=0;
+ for(let i=0;i<list.length;i++){
+  if(list[i].type===startType){
+   let end=list.slice(i+1).find(x=>x.type===endType);
+   if(end) total+=end.time-list[i].time;
+  }
+ }
+ return total;
+}
+function napStats(list){
+ let long=0, short=0;
+
+ for(let i=0;i<list.length;i++){
+  if(list[i].type==="sleep_start"){
+   let end=list.slice(i+1).find(x=>x.type==="sleep_end");
+   if(end){
+    let duration=end.time-list[i].time;
+    if(duration>45*60*1000) long++;
+    else short++;
+   }
+  }
+ }
+ return {long,short};
+}
+
+function count(type,list){return list.filter(e=>e.type===type).length;}
+
+function renderTodaySummary(){
+ let start=getDayStart();
+ let end=getDayStart(-1);
+ let day=getEventsBetween(start,end);
+
+ let feeds=count("feed_end",day);
+ let feedTime=sumDurations(day,"feed_start","feed_end");
+
+ let sleep=sumDurations(day,"sleep_start","sleep_end");
+ let naps=count("sleep_end",day);
+ let nap=napStats(day);
+
+ let diapers=count("diaper_pee",day)+count("diaper_poop",day)+count("diaper_mix",day);
+
+ document.getElementById("todaySummary").innerHTML=
+ `🍼 ${format(feedTime)} (${feeds} karmień)<br>
+  😴 ${format(sleep)} (${naps} drzemek)<br>
+  <span class="small">>45 min: ${nap.long} | ≤45 min: ${nap.short}</span><br>
+  💩 ${diapers} pieluch`;
+}
+
+function renderWeekSummary(){
+ let html="";
+ for(let i=0;i<7;i++){
+  let start=getDayStart(i);
+  let end=getDayStart(i-1);
+  let day=getEventsBetween(start,end);
+  let nap=napStats(day);
+  let feeds=count("feed_end",day);
+  let feedTime=sumDurations(day,"feed_start","feed_end");
+  let sleep=sumDurations(day,"sleep_start","sleep_end");
+  let naps=count("sleep_end",day);
+  let diapers=count("diaper_pee",day)+count("diaper_poop",day)+count("diaper_mix",day);
+
+  let label=i===0?"dziś":i+" dni temu";
+
+  html+=`${label}: 🍼${feeds} (${format(feedTime)}) | 😴${format(sleep)} (${nap.long}/${nap.short}) | 💩${diapers}<br>`;
+ }
+ document.getElementById("weekSummary").innerHTML=html;
+}
+
+function exportReport(){
+ let start=getDayStart(6);
+ let week=getEventsBetween(start,Date.now());
+
+ let feeds=count("feed_end",week);
+ let feedTime=sumDurations(week,"feed_start","feed_end");
+ let sleep=sumDurations(week,"sleep_start","sleep_end");
+ let naps=count("sleep_end",week);
+ let nap=napStats(week);
+ let pee=count("diaper_pee",week);
+ let poop=count("diaper_poop",week);
+ let mix=count("diaper_mix",week);
+
+ let txt=
+`Raport tygodniowy
+
+Karmienia: ${feeds}
+Czas karmienia: ${format(feedTime)}
+
+Sen: ${format(sleep)} (${naps} drzemek)
+Drzemki >45 min: ${nap.long}
+Drzemki ≤45 min: ${nap.short}
+
+Pieluchy:
+siku: ${pee}
+kupa: ${poop}
+mieszane: ${mix}`;
+
+ let blob=new Blob([txt],{type:"text/plain"});
+ let a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="raport.txt";
+ a.click();
+}
+
 render();
 
 </script>
