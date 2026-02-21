@@ -106,8 +106,8 @@ WERSJA TESTOWA – dane mogą zostać usunięte
 <h2>AKCJE</h2>
 
 <div class="grid2">
-<button class="feed" onclick="toggleFeed()">🍼 Karmienie</button>
-<button class="sleep" onclick="toggleSleep()">😴 Sen</button>
+<button id="feedBtn" class="feed" onclick="toggleFeed()">🍼 Start karmienia</button>
+<button id="sleepBtn" class="sleep" onclick="toggleSleep()">😴 Start snu</button>
 </div>
 
 <div class="grid3">
@@ -218,6 +218,17 @@ function renderNow(){
  }
 }
 
+function updateButtons(){
+ let feeding=events.findLast(e=>e.type==="feed_start" && !events.some(x=>x.type==="feed_end" && x.time>e.time));
+ let sleeping=events.findLast(e=>e.type==="sleep_start" && !events.some(x=>x.type==="sleep_end" && x.time>e.time));
+
+ document.getElementById("feedBtn").innerText =
+  feeding ? "🍼 Zakończ karmienie" : "🍼 Start karmienia";
+
+ document.getElementById("sleepBtn").innerText =
+  sleeping ? "😴 Pobudka" : "😴 Start snu";
+}
+
 function renderTimeline(){
  let start=new Date(); start.setHours(0,0,0,0);
  let today=events.filter(e=>e.time>start.getTime()).reverse();
@@ -250,6 +261,7 @@ function render(){
  renderTimeline();
  renderTodaySummary();
  renderWeekSummary();
+ updateButtons();
 }
 
 setInterval(renderNow,1000);
