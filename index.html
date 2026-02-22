@@ -199,7 +199,13 @@ function renderDate(){
 
 function renderNow(){
  let lf=last("feed_start");
- let ld=last("diaper_pee")||last("diaper_poop")||last("diaper_mix");
+ let ld=[...events]
+  .reverse()
+  .find(e => 
+    e.type==="diaper_pee" ||
+    e.type==="diaper_poop" ||
+    e.type==="diaper_mix"
+  );
  let ls=last("sleep_end");
 
  document.getElementById("sinceFeed").innerText=
